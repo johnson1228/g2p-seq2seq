@@ -33,7 +33,7 @@ class Params(object):
     self.problem_name = "grapheme_to_phoneme_problem"
     self.train_steps = 10
     self.eval_steps = 1
-    self.iterations_per_loop = 2
+    self.iterations_per_loop = 1
     self.local_eval_frequency = 5
     self.hparams = "eval_drop_long_sequences=1,batch_size=1," +\
         "num_hidden_layers=1,hidden_size=4,filter_size=8,num_heads=1," +\
@@ -45,7 +45,7 @@ class Params(object):
     if flags:
       self.p2g = flags.p2g
       self.batch_size = flags.batch_size
-      self.iterations_per_loop = min(1000, max(10, int(self.batch_size/10)))
+      # self.iterations_per_loop = min(1000, max(10, int(self.batch_size/10)))
       if flags.max_epochs > 0:
         self.train_steps = max(10000, 
                                int(len(open(data_path).readlines()) /\
@@ -100,7 +100,7 @@ class Params(object):
     self.export_saved_model = False
     self.tfdbg = False
     self.dbgprofile = False
-    self.eval_early_stopping_steps = None
+    self.eval_early_stopping_steps = flags.early_stopping_steps
     self.eval_early_stopping_metric = "loss"
     self.eval_early_stopping_metric_minimize = True
     self.profile = False

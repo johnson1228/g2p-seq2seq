@@ -84,6 +84,10 @@ tf.flags.DEFINE_float("alpha", 0.6,
     """Float that controls the length penalty. Larger the alpha, stronger the
     preference for longer sequences.""")
 
+# Running config
+tf.flags.DEFINE_integer("early_stopping_steps", 50000, 
+                        "Early stopping setting. Default is 50000 train steps.")
+
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -104,6 +108,7 @@ def main(_=[]):
     os.makedirs(FLAGS.model_dir)
 
   params = Params(FLAGS.model_dir, file_path, flags=FLAGS)
+  tf.logging.info("Number of train steps: %d".format(params.train_steps))
 
   if FLAGS.train:
     g2p_trainer_utils.save_params(FLAGS.model_dir, params.hparams)
