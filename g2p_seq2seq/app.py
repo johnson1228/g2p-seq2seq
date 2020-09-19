@@ -108,7 +108,7 @@ def main(_=[]):
     os.makedirs(FLAGS.model_dir)
 
   params = Params(FLAGS.model_dir, file_path, flags=FLAGS)
-  tf.logging.info("Number of train steps: %d".format(params.train_steps))
+  tf.logging.info("Number of train steps: {}".format(params.train_steps))
 
   if FLAGS.train:
     g2p_trainer_utils.save_params(FLAGS.model_dir, params.hparams)
