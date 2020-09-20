@@ -41,6 +41,7 @@ class Params(object):
     self.decode_hparams = "beam_size=1,alpha=0.6,return_beams=False"
     self.master = ""
     self.p2g = False
+    self.eval_early_stopping_steps = 50000
 
     if flags:
       self.p2g = flags.p2g
@@ -77,6 +78,8 @@ class Params(object):
           self.decode_hparams += ",return_beams=True"
       else:
           self.decode_hparams += ",return_beams=False"
+          
+      self.eval_early_stopping_steps = flags.early_stopping_steps
 
     self.tpu_num_shards = 8
     self.log_device_replacement = False
@@ -100,7 +103,6 @@ class Params(object):
     self.export_saved_model = False
     self.tfdbg = False
     self.dbgprofile = False
-    self.eval_early_stopping_steps = flags.early_stopping_steps
     self.eval_early_stopping_metric = "loss"
     self.eval_early_stopping_metric_minimize = True
     self.profile = False
