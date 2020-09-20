@@ -343,33 +343,20 @@ class G2PModel(object):
     # This is how TF decides what part of the Graph he has to keep and what
     # part it can dump
     # NOTE: this variable is plural, because you can have multiple output nodes
-    output_node_names = ["transformer/parallel_0_4/transformer/transformer/body/encoder/"
-        "layer_0/self_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/encoder/"
-        "layer_1/self_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/encoder/"
-        "layer_2/self_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
-        "layer_0/self_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
-        "layer_0/encdec_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
-        "layer_1/self_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
-        "layer_1/encdec_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
-        "layer_2/self_attention/multihead_attention/dot_product_attention/"
-        "attention_weights",
-                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
-        "layer_2/encdec_attention/multihead_attention/dot_product_attention/"
-        " attention_weights"]
+    output_node_names = []
+    hparams = self.params.hparams.split(",")
+    num_layers = [int(hp.split("=")[1]) for hp in hparams 
+                  if hp.startswith("num_hidden_layers")][0]
+    root_dir = "transformer/parallel_0_4/transformer/transformer/body"
+    for i in range(num_layers):
+      output_node_names.append("{}/encoder/layer_{}/self_attention/".format(root_dir, i) +\
+          "multihead_attention/dot_product_attention/attention_weights")
+
+    for i in range(num_layers):
+      output_node_names.append("{}/decoder/layer_{}/self_attention/".format(root_dir, i) +\
+          "multihead_attention/dot_product_attention/attention_weights")
+      output_node_names.append("{}/decoder/layer_{}/encdec_attention/".format(root_dir, i) +\
+          "multihead_attention/dot_product_attention/attention_weights")
 
     # We clear devices to allow TensorFlow to control on which device it will
     # load operations
