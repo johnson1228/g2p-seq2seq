@@ -181,7 +181,8 @@ class G2PModel(object):
                 config=self.estimator._session_config),
             hooks=hooks)
       except:
-        raise StandardError("Invalid model in {}".format(self.params.model_dir))
+        # raise StandardError("Invalid model in {}".format(self.params.model_dir))
+        raise ValueError("Invalid model in {}".format(self.params.model_dir))
 
   def decode_word(self, word):
     """Decode word.
@@ -342,33 +343,33 @@ class G2PModel(object):
     # This is how TF decides what part of the Graph he has to keep and what
     # part it can dump
     # NOTE: this variable is plural, because you can have multiple output nodes
-    output_node_names = ["transformer/parallel_0_5/transformer/body/decoder/"
+    output_node_names = ["transformer/parallel_0_4/transformer/transformer/body/encoder/"
         "layer_0/self_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/encoder/"
-        "layer_0/self_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/encoder/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/encoder/"
         "layer_1/self_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/encoder/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/encoder/"
         "layer_2/self_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/decoder/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
+        "layer_0/self_attention/multihead_attention/dot_product_attention/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
         "layer_0/encdec_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/decoder/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
         "layer_1/self_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/decoder/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
         "layer_1/encdec_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/decoder/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
         "layer_2/self_attention/multihead_attention/dot_product_attention/"
-        "Softmax",
-                         "transformer/parallel_0_5/transformer/body/decoder/"
+        "attention_weights",
+                         "transformer/parallel_0_4/transformer/transformer/body/decoder/"
         "layer_2/encdec_attention/multihead_attention/dot_product_attention/"
-        "Softmax"]
+        " attention_weights"]
 
     # We clear devices to allow TensorFlow to control on which device it will
     # load operations
@@ -474,7 +475,8 @@ class G2PModel(object):
 
           decodes.append(decoded_outputs)
     except:
-      raise StandardError("Invalid model in {}".format(self.params.model_dir))
+      # raise StandardError("Invalid model in {}".format(self.params.model_dir))
+      raise ValueError("Invalid model in {}".format(self.params.model_dir))
 
     return [inputs, decodes]
 
