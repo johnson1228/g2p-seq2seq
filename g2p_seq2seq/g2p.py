@@ -318,16 +318,24 @@ class G2PModel(object):
     if os.path.exists(self.frozen_graph_filename):
       with tf.Session(graph=self.graph) as sess:
         inp = tf.placeholder(tf.string, name="inp_decode")[0]
-        decode_op = tf.py_func(self.calc_errors, [inp], [tf.int64, tf.int64])
-        [correct, errors] = self.__run_op(sess, decode_op, self.test_path)
+        decode_op = tf.py_func(self.calc_errors, [inp], 
+                              [tf.int64, tf.int64, tf.int64, tf.int64])
+        results = self.__run_op(sess, decode_op, self.test_path)
 
     else:
-      correct, errors = self.calc_errors(self.test_path)
+      results = self.calc_errors(self.test_path)
+    
+    word_correct, word_errors, phone_errors, total_ref_phones = results
 
-    print("Words: %d" % (correct+errors))
-    print("Errors: %d" % errors)
-    print("WER: %.3f" % (float(errors)/(correct+errors)))
-    print("Accuracy: %.3f" % float(1.-(float(errors)/(correct+errors))))
+    print("="*80)
+    print("Total words: {}".format(word_correct + word_errors))
+    print("Word errors: {}".format(word_errors))
+    print("WER: {:.3f}".format(float(word_errors) / (word_correct + word_errors)))
+    print("-"*80)
+    print("Total phones: {}".format(total_ref_phones))
+    print("Phone errors: {}".format(phone_errors))
+    print("PER: {:.3f}".format(float(phone_errors) / total_ref_phones))
+    print("="*80)
 
   def freeze(self):
     """Freeze pre-trained model."""
@@ -468,11 +476,17 @@ class G2PModel(object):
     return [inputs, decodes]
 
   def calc_errors(self, decode_file_path):
-    """Calculate a number of prediction errors."""
+    """Calculate a number of word and phone prediction errors."""
     inputs, decodes = self.__decode_from_file(decode_file_path)
 
-    correct, errors = 0, 0
+    word_correct, word_errors, phone_errors = 0, 0, 0
+    total_ref_phones = 0
     for index, word in enumerate(inputs):
+      # Estimate #phones of the word
+      ref_phone_count = np.mean([len(ref_str.split(" ")) 
+                                 for ref_str in self.g2p_gt_map[word]])
+      total_ref_phones += int(ref_phone_count)
+
       if self.decode_hp.return_beams:
         beam_correct_found = False
         for beam_decode in decodes[index]:
@@ -480,16 +494,65 @@ class G2PModel(object):
             beam_correct_found = True
             break
         if beam_correct_found:
-          correct += 1
+          word_correct += 1
         else:
-          errors += 1
+          word_errors += 1
+          # Estimate phone-level errors
+          phone_error = phone_errors_for_single_word(decodes[index], 
+                                                     self.g2p_gt_map[word])
+          phone_errors += phone_error
+          
       else:
         if decodes[index] in self.g2p_gt_map[word]:
-          correct += 1
+          word_correct += 1
         else:
-          errors += 1
+          word_errors += 1
+          # Estimate phone-level errors
+          phone_error = phone_errors_for_single_word([decodes[index]], 
+                                                     self.g2p_gt_map[word])
+          phone_errors += phone_error
 
-    return correct, errors
+    return word_correct, word_errors, phone_errors, total_ref_phones
+
+
+def phone_errors_for_single_word(predicted_strs, ref_strs):
+  """
+  Given decoded results (depending on beam size) and a list of ref 
+  pronunciations, estimate the phone-level edit distance. Return the min
+  distance.
+  """
+  phone_error_list = []
+  for ref_str in ref_strs:
+    for predicted_str in predicted_strs:
+      d = phone_edit_distance(predicted_str, ref_str)
+      phone_error_list.append(d)
+  return min(phone_error_list)
+
+
+def phone_edit_distance(predicted_str, ref_str):
+  """
+  Estimate the edit distance between predicted and ref phone sequences.
+  """
+  predicted_list = predicted_str.split(" ")
+  ref_list = ref_str.split(" ")
+  m, n = len(predicted_list), len(ref_list)
+  dp = [[0] * (m+1) for _ in range(n+1)]
+  dp[0][0] = 0
+        
+  for i in range(1, m+1):
+    dp[0][i] = i
+        
+  for i in range(1, n+1):
+    dp[i][0] = i
+        
+  for i in range(1, m+1):
+    for j in range(1, n+1):
+      if predicted_list[i-1] == ref_list[j-1]:
+        dp[j][i] = dp[j-1][i-1]
+      else:
+        dp[j][i] = min(dp[j-1][i] + 1, dp[j][i-1] + 1, dp[j-1][i-1] + 1)
+                
+  return dp[n][m]
 
 
 def get_word():
