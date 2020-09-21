@@ -326,15 +326,16 @@ class G2PModel(object):
       results = self.calc_errors(self.test_path)
     
     word_correct, word_errors, phone_errors, total_ref_phones = results
+    wer = 100.0 * word_errors / (word_correct + word_errors)
+    per = 100.0 * phone_errors / total_ref_phones
 
     print("="*80)
-    print("Total words: {}".format(word_correct + word_errors))
-    print("Word errors: {}".format(word_errors))
-    print("WER: {:.3f}".format(float(word_errors) / (word_correct + word_errors)))
-    print("-"*80)
-    print("Total phones: {}".format(total_ref_phones))
-    print("Phone errors: {}".format(phone_errors))
-    print("PER: {:.3f}".format(float(phone_errors) / total_ref_phones))
+    print("Total: {} words, {} phones".\
+          format(word_correct + word_errors, total_ref_phones))
+    print("Word errors: {} ({:.2f}%)".format(word_errors, wer))
+    print("Phone errors: {} ({:.2f}%)".format(phone_errors, per))
+    print("Total word errors: {}".format(word_errors))
+    print("Total phone errors: {}".format(phone_errors))
     print("="*80)
 
   def freeze(self):
@@ -481,7 +482,12 @@ class G2PModel(object):
 
     word_correct, word_errors, phone_errors = 0, 0, 0
     total_ref_phones = 0
+    word_set = set()
     for index, word in enumerate(inputs):
+      if word in word_set:
+        continue
+
+      word_set.add(word)
       # Estimate #phones of the word
       ref_phone_count = np.mean([len(ref_str.split(" ")) 
                                  for ref_str in self.g2p_gt_map[word]])
