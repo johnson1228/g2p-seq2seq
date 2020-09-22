@@ -30,6 +30,7 @@ from tensor2tensor.data_generators.problem import problem_hparams_to_features
 import tensorflow as tf
 from tensorflow.python.estimator import estimator as estimator_lib
 from tensorflow.python.framework import graph_util
+from tensorflow.python.util import compat
 
 # Dependency imports
 
@@ -285,19 +286,26 @@ class G2PModel(object):
 
   def decode(self, output_file_path):
     """Run decoding mode."""
+    outfile = None
+    # If path to the output file pointed out, dump decoding results to the file
+    if output_file_path:
+      tf.logging.info("Writing decodes into %s" % output_file_path)
+      outfile = tf.gfile.Open(output_file_path, "w")
+
     if os.path.exists(self.frozen_graph_filename):
       with tf.Session(graph=self.graph) as sess:
         inp = tf.placeholder(tf.string, name="inp_decode")[0]
         decode_op = tf.py_func(self.__decode_from_file, [inp],
                                [tf.string, tf.string])
         [inputs, decodes] = self.__run_op(sess, decode_op, self.test_path)
+        # Output the results to a file if given.
+        if output_file_path:
+          for _input, _decode in zip(inputs, decodes):
+            _input = compat.as_text(_input)
+            _decode = compat.as_text(_decode)
+            outfile.write("{} {}\n".format(_input, _decode))
+      
     else:
-      outfile = None
-      # If path to the output file pointed out, dump decoding results to the file
-      if output_file_path:
-        tf.logging.info("Writing decodes into %s" % output_file_path)
-        outfile = tf.gfile.Open(output_file_path, "w")
-
       inputs, decodes = self.__decode_from_file(self.test_path, outfile)
 
   def evaluate(self):
@@ -450,11 +458,9 @@ class G2PModel(object):
                 decoding._save_until_eos(beam, False))
             beam_decodes.append(decoded_outputs)
             if outfile:
-              outfile.write("%s %s%s" % (decoded_inputs, decoded_outputs,
-                  self.decode_hp.delimiter))
+              outfile.write("%s %s\n" % (decoded_inputs, decoded_outputs))
             else:
-              print("%s %s%s" % (decoded_inputs, decoded_outputs,
-                  self.decode_hp.delimiter))
+              print("%s %s" % (decoded_inputs, decoded_outputs))
           decodes.append(beam_decodes)
         else:
           decoded_inputs = inputs_vocab.decode(
@@ -463,11 +469,9 @@ class G2PModel(object):
               decoding._save_until_eos(result["outputs"], False))
 
           if outfile:
-            outfile.write("%s %s%s" % (decoded_inputs, decoded_outputs,
-                self.decode_hp.delimiter))
+            outfile.write("%s %s\n" % (decoded_inputs, decoded_outputs))
           else:
-            print("%s %s%s" % (decoded_inputs, decoded_outputs,
-                self.decode_hp.delimiter))
+            print("%s %s" % (decoded_inputs, decoded_outputs))
 
           decodes.append(decoded_outputs)
     except:

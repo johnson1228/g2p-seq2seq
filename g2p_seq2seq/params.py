@@ -73,7 +73,8 @@ class Params(object):
           ",max_length=" + str(flags.max_length) +\
           ",min_length_bucket=" + str(flags.min_length_bucket)
       self.decode_hparams = "beam_size=" + str(flags.beam_size) +\
-          ",alpha=" + str(flags.alpha)
+          ",alpha=" + str(flags.alpha) +\
+          ",batch_size=32"
       if flags.return_beams:
           self.decode_hparams += ",return_beams=True"
       else:
