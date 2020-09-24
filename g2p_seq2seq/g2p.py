@@ -287,7 +287,7 @@ class G2PModel(object):
   def decode(self, output_file_path):
     """Run decoding mode."""
     outfile = None
-    # If path to the output file pointed out, dump decoding results to the file
+    # Output results to a file if given.
     if output_file_path:
       tf.logging.info("Writing decodes into %s" % output_file_path)
       outfile = tf.gfile.Open(output_file_path, "w")
@@ -298,15 +298,17 @@ class G2PModel(object):
         decode_op = tf.py_func(self.__decode_from_file, [inp],
                                [tf.string, tf.string])
         [inputs, decodes] = self.__run_op(sess, decode_op, self.test_path)
-        # Output the results to a file if given.
-        if output_file_path:
-          for _input, _decode in zip(inputs, decodes):
-            _input = compat.as_text(_input)
-            _decode = compat.as_text(_decode)
-            outfile.write("{} {}\n".format(_input, _decode))
-      
     else:
-      inputs, decodes = self.__decode_from_file(self.test_path, outfile)
+      inputs, decodes = self.__decode_from_file(self.test_path)
+    
+    # Output decoding results
+    for _input, _decode in zip(inputs, decodes):
+      _input = compat.as_text(_input)
+      _decode = compat.as_text(_decode)
+      if output_file_path:
+        outfile.write("{} {}\n".format(_input, _decode))
+      else:
+        print("Raw prediction: {} {}".format(_input, _decode))
 
   def evaluate(self):
     """Run evaluation mode."""
@@ -417,7 +419,7 @@ class G2PModel(object):
       # Since we load everything in a new graph, this is not needed
       tf.import_graph_def(graph_def, name="import")
 
-  def __decode_from_file(self, filename, outfile=None):
+  def __decode_from_file(self, filename):
     """Compute predictions on entries in filename and write them out."""
 
     if not self.decode_hp.batch_size:
@@ -457,22 +459,12 @@ class G2PModel(object):
             decoded_outputs = targets_vocab.decode(
                 decoding._save_until_eos(beam, False))
             beam_decodes.append(decoded_outputs)
-            if outfile:
-              outfile.write("%s %s\n" % (decoded_inputs, decoded_outputs))
-            else:
-              print("%s %s" % (decoded_inputs, decoded_outputs))
           decodes.append(beam_decodes)
         else:
           decoded_inputs = inputs_vocab.decode(
               decoding._save_until_eos(result["inputs"], False))
           decoded_outputs = targets_vocab.decode(
               decoding._save_until_eos(result["outputs"], False))
-
-          if outfile:
-            outfile.write("%s %s\n" % (decoded_inputs, decoded_outputs))
-          else:
-            print("%s %s" % (decoded_inputs, decoded_outputs))
-
           decodes.append(decoded_outputs)
     except:
       # raise StandardError("Invalid model in {}".format(self.params.model_dir))
